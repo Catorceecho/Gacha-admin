@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小风扭蛋池管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #faf6f0;
+      --warm-white: #fff9f3;
+      --dusty-rose: #e8c4b0;
+      --amber: #c8956c;
+      --deep-amber: #a0704a;
+      --text-dark: #3d2b1f;
+      --text-mid: #7a5c4a;
+      --text-light: #b8967a;
+      --card-bg: rgba(255, 249, 243, 0.88);
+      --shadow: 0 4px 24px rgba(160, 112, 74, 0.12);
+      --danger: #b86b6b;
+      --danger-bg: #fff1f1;
+      --ok: #6b8f5e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Serif SC', serif;
+      background-color: var(--cream);
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(232, 196, 176, 0.28) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(200, 149, 108, 0.18) 0%, transparent 50%);
+      color: var(--text-dark);
+      min-height: 100vh;
+      padding: 32px 16px 60px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header-subtitle {
+      font-family: 'Lora', serif;
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .header-title span {
+      color: var(--amber);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid rgba(232, 196, 176, 0.5);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      color: var(--text-mid);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(232, 196, 176, 0.45);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 6px;
+    }
+
+    select, input, textarea {
+      width: 100%;
+      border: 1px solid rgba(232, 196, 176, 0.6);
+      border-radius: 12px;
+      background: var(--cream);
+      color: var(--text-dark);
+      padding: 12px 14px;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 14px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      line-height: 1.7;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--amber);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--dusty-rose), var(--amber));
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--cream);
+      color: var(--text-mid);
+      border: 1px solid rgba(232, 196, 176, 0.6);
+    }
+
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(184, 107, 107, 0.2);
+    }
+
+    .btn-small {
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .toolbar .field {
+      min-width: 150px;
+      flex: 1;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .item {
+      background: var(--cream);
+      border: 1px solid rgba(232, 196, 176, 0.4);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 8px;
+    }
+
+    .meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      color: var(--text-light);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(232, 196, 176, 0.55);
+      background: #fff7ef;
+      color: var(--deep-amber);
+    }
+
+    .item-msg {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text-dark);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--text-light);
+      padding: 26px 0;
+      font-size: 14px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--text-dark);
+      color: var(--cream);
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-size: 14px;
+      transition: transform 0.28s ease;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 640px) {
+      .row, .row-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .item-top {
+        flex-direction: column;
+      }
+
+      .item-actions {
+        width: 100%;
+      }
+
+      .item-actions button {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-subtitle">private pool editor</div>
+      <div class="header-title">小风<span>扭蛋池管理</span></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">新增 / 编辑</div>
+
+      <div class="row">
+        <div>
+          <label for="rarity">稀有度</label>
+          <select id="rarity">
+            <option value="传说">传说</option>
+            <option value="史诗">史诗</option>
+            <option value="稀有">稀有</option>
+            <option value="普通" selected>普通</option>
+          </select>
+        </div>
+        <div>
+          <label for="editing-id">当前编辑的 ID</label>
+          <input id="editing-id" type="text" placeholder="留空表示新增" readonly />
+        </div>
+      </div>
+
+      <div>
+        <label for="message">台词内容</label>
+        <textarea id="message" placeholder="在这里输入小风扭蛋内容..."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="saveMessage()">保存</button>
+        <button class="btn-secondary" onclick="resetForm()">清空</button>
+      </div>
+
+      <div class="hint">
+        这里是你自己的小风池管理页。平时想加一句、改一句、删一句，都在这儿弄就好。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">筛选与列表</div>
+
+      <div class="toolbar">
+        <div class="field">
+          <label for="filter-rarity">按稀有度筛选</label>
+          <select id="filter-rarity" onchange="loadMessages()">
+            <option value="全部" selected>全部</option>
+            <option value="传说">传说</option>
+            <option value="史诗">史诗</option>
+            <option value="稀有">稀有</option>
+            <option value="普通">普通</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="keyword">关键词搜索</label>
+          <input id="keyword" type="text" placeholder="输入关键词后点刷新" />
+        </div>
+
+        <div>
+          <button class="btn-secondary" onclick="loadMessages()">刷新列表</button>
+        </div>
+      </div>
+
+      <div class="hint" style="margin-bottom: 12px;">
+        这里只看小风池，不会动 Claude 那边的池子。
+      </div>
+
+      <div class="list" id="message-list">
+        <div class="empty">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://lnkxpzvqsjnsfqpxvifl.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_av7KON3Kjecv32iKimnSMA_1iOsi9ZT';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    function formatCNTime(value) {
+      return new Date(value).toLocaleString('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        hour12: false
+      });
+    }
+
+    function resetForm() {
+      document.getElementById('editing-id').value = '';
+      document.getElementById('rarity').value = '普通';
+      document.getElementById('message').value = '';
+    }
+
+    function fillForm(item) {
+      document.getElementById('editing-id').value = item.id;
+      document.getElementById('rarity').value = item.rarity;
+      document.getElementById('message').value = item.message;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function saveMessage() {
+      const id = document.getElementById('editing-id').value.trim();
+      const rarity = document.getElementById('rarity').value;
+      const message = document.getElementById('message').value.trim();
+
+      if (!message) {
+        showToast('台词内容不能为空');
+        return;
+      }
+
+      if (id) {
+        const { error } = await db
+          .from('xiaofeng_gacha_messages')
+          .update({ rarity, message })
+          .eq('id', id);
+
+        if (error) {
+          showToast('修改失败');
+          return;
+        }
+
+        showToast('修改成功');
+      } else {
+        const { error } = await db
+          .from('xiaofeng_gacha_messages')
+          .insert({ rarity, message });
+
+        if (error) {
+          showToast('新增失败');
+          return;
+        }
+
+        showToast('新增成功');
+      }
+
+      resetForm();
+      loadMessages();
+    }
+
+    async function deleteMessage(id) {
+      const ok = confirm(`确定删除 id=${id} 这条台词吗？`);
+      if (!ok) return;
+
+      const { error } = await db
+        .from('xiaofeng_gacha_messages')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        showToast('删除失败');
+        return;
+      }
+
+      if (document.getElementById('editing-id').value === String(id)) {
+        resetForm();
+      }
+
+      showToast('删除成功');
+      loadMessages();
+    }
+
+    async function loadMessages() {
+      const rarity = document.getElementById('filter-rarity').value;
+      const keyword = document.getElementById('keyword').value.trim();
+      const list = document.getElementById('message-list');
+
+      let query = db
+        .from('xiaofeng_gacha_messages')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (rarity !== '全部') {
+        query = query.eq('rarity', rarity);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        list.innerHTML = '<div class="empty">读取失败</div>';
+        return;
+      }
+
+      let rows = data || [];
+
+      if (keyword) {
+        rows = rows.filter(item => item.message.includes(keyword));
+      }
+
+      if (!rows.length) {
+        list.innerHTML = '<div class="empty">这里还没有内容</div>';
+        return;
+      }
+
+      list.innerHTML = rows.map(item => `
+        <div class="item">
+          <div class="item-top">
+            <div style="flex:1;">
+              <div class="meta">
+                <span class="badge">${item.rarity}</span>
+                <span>ID: ${item.id}</span>
+                <span>${formatCNTime(item.created_at)}</span>
+              </div>
+              <div class="item-msg">${escapeHtml(item.message)}</div>
+            </div>
+            <div class="item-actions">
+              <button class="btn-secondary btn-small" onclick='fillForm(${JSON.stringify(item).replace(/'/g, "&apos;")})'>编辑</button>
+              <button class="btn-danger btn-small" onclick="deleteMessage(${item.id})">删除</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    loadMessages();
+  </script>
+</body>
+</html>
